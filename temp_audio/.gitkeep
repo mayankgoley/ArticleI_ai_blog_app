@@ -1,0 +1,2 @@
+# This file ensures the temp_audio directory is tracked by git
+# while ignoring all audio files within it

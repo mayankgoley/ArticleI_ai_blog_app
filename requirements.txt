@@ -1,0 +1,21 @@
+# Core Django framework
+Django==5.2.7
+
+# YouTube video processing
+yt-dlp>=2024.1.0
+
+# Configuration management
+python-decouple==3.8
+
+# Automatic Speech Recognition (ASR) dependencies
+# OpenAI Whisper for audio transcription
+openai-whisper==20231117
+
+# PyTorch for Whisper model execution
+# Note: Using flexible version to ensure compatibility
+torch>=2.2.0
+torchaudio>=2.2.0
+
+# FFmpeg Python bindings for audio extraction
+# Note: Requires ffmpeg system package to be installed
+ffmpeg-python==0.2.0

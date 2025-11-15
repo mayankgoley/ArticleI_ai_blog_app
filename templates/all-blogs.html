@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Blogs Posts</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-800 p-4 text-white flex justify-between">
+        <!-- Left side -->
+        <div>
+            <a href="/" class="text-3xl font-bold hover:text-gray-200 transition-colors">Article I</a>
+        </div>
+        <!-- Right side -->
+        <div class="space-x-4">
+            <a href="/" class="text-white hover:underline">Home</a>
+            <a href="/logout" class="text-white hover:underline">Logout</a>
+        </div>
+    </nav>
+    
+    <!-- Main Content Section -->
+    <div class="container mx-auto mt-10 px-4 sm:px-0">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+            <!-- Article Section -->
+             <section>
+                <h2 class="text-xl mb-4 font-semibold">All Articles</h2>
+                {% if blog_articles %}
+                    <div class="space-y-4">
+                        {% for article in blog_articles %}
+                            <div class="border border-gray-600 p-4 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors">
+                                <h3 class="text-lg font-semibold mb-2">{{ article.youtube_title }}</h3>
+                                <p class="text-gray-600 text-sm mb-2">Created: {{ article.created_at|date:"M d, Y" }}</p>
+                                <p class="text-gray-700 mb-3">{{ article.generated_content|truncatewords:30|striptags }}</p>
+                                
+                                <div class="flex items-center justify-between">
+                                    <a href="/blog-details/{{ article.id }}/" class="text-blue-800 hover:underline font-medium">Read More →</a>
+                                    
+                                    <div class="flex items-center space-x-3">
+                                        <a href="/download-blog/{{ article.id }}/" 
+                                           class="inline-flex items-center text-green-600 hover:text-green-800 text-sm font-medium">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Download
+                                        </a>
+                                        
+                                        <button onclick="deleteArticle({{ article.id }}, '{{ article.youtube_title|escapejs }}')" 
+                                                class="inline-flex items-center text-red-600 hover:text-red-800 text-sm font-medium">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-gray-600 mb-4">You haven't generated any articles yet.</p>
+                        <a href="/" class="bg-blue-800 text-white px-4 py-2 rounded-md hover:bg-blue-900 transition-colors">Generate Your First Article</a>
+                    </div>
+                {% endif %}
+             </section>
+        </div>
+    </div>
+
+    <footer>
+        <div class="bg-blue-800 text-white text-center p-4 mt-10">
+            &copy; Powered by <a href="https://www.linkedin.com/in/mayank-goley-6a4372166/ " target="_blank">Mayank Goley</a>
+        </div>
+    </footer>
+
+    <script>
+        function deleteArticle(articleId, articleTitle) {
+            // Show confirmation dialog
+            if (confirm(`Are you sure you want to delete "${articleTitle}"?\n\nThis action cannot be undone.`)) {
+                // Send delete request
+                fetch(`/delete-blog/${articleId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Article deleted successfully!');
+                        // Reload the page to update the list
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to delete article'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the article. Please try again.');
+                });
+            }
+        }
+
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

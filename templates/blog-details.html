@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Detail</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-800 p-4 text-white flex justify-between">
+        <!-- Left side -->
+        <div>
+            <a href="/" class="text-3xl font-bold hover:text-gray-200 transition-colors">Article I</a>
+        </div>
+        <!-- Right side -->
+        <div class="space-x-4">
+            <a href="/" class="text-white hover:underline">Home</a>
+            <a href="/all-blogs" class="text-white hover:underline">All Articles</a>
+            <a href="/logout" class="text-white hover:underline">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto mt-10 px-4 sm:px-0">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+            <section>
+                <h2 class="text-xl mb-4 font-semibold">Article Details</h2>
+                <div class="border border-gray-600 p-6 rounded-lg">
+                    <h3 class="text-2xl font-bold mb-4">{{ blog_article_detail.youtube_title }}</h3>
+                    <p class="text-gray-600 text-sm mb-4">Created: {{ blog_article_detail.created_at|date:"M d, Y H:i" }}</p>
+                    
+                    <div class="prose max-w-none mb-6">
+                        {{ blog_article_detail.generated_content|safe }}
+                    </div>
+                    
+                    <hr class="my-6 border-gray-300">
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="text-lg font-semibold mb-2">Source Video</h4>
+                        <p class="text-gray-700 mb-2"><strong>Title:</strong> {{ blog_article_detail.youtube_title }}</p>
+                        <p class="text-gray-700 mb-4"><strong>Link:</strong> 
+                            <a href="{{ blog_article_detail.youtube_link }}" target="_blank" class="text-blue-800 hover:underline">
+                                {{ blog_article_detail.youtube_link }}
+                            </a>
+                        </p>
+                        
+                        <!-- Download Button -->
+                        <div class="mt-4">
+                            <a href="/download-blog/{{ blog_article_detail.id }}/" 
+                               class="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Download as Text File
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </div>
+
+    <footer>
+        <div class="bg-blue-800 text-white text-center p-4 mt-10">
+            &copy; Powered by <a href="https://www.linkedin.com/in/mayank-goley-6a4372166/ " target="_blank">Mayank Goley</a>
+        </div>
+    </footer>
+</body>
+</html>
