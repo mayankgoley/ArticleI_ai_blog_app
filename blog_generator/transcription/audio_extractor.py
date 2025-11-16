@@ -61,10 +61,22 @@ def get_audio_info(youtube_url: str) -> Dict:
     """
     logger.info(f"Fetching audio info for URL: {youtube_url}")
     
+    # Check for cookies file
+    cookies_path = Path('cookies/cookies.txt')
+    
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
         'extract_flat': False,
+        # YouTube-specific options to bypass bot detection
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],
+                'skip': ['hls', 'dash']
+            }
+        },
+        # Use cookies if available
+        'cookiefile': str(cookies_path) if cookies_path.exists() else None,
     }
     
     try:
@@ -226,6 +238,9 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
         
         logger.info(f"Downloading audio to: {output_path}")
         
+        # Check for cookies file (helps bypass YouTube bot detection)
+        cookies_path = Path('cookies/cookies.txt')
+        
         # Configure yt-dlp options for audio extraction
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -244,6 +259,17 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
                 '-ar', str(AUDIO_SAMPLE_RATE),  # Sample rate: 16kHz
                 '-ac', str(AUDIO_CHANNELS),      # Channels: mono
             ],
+            # FFmpeg location (for Render deployment)
+            'ffmpeg_location': '/usr/bin/ffmpeg',
+            # YouTube-specific options to bypass bot detection
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'skip': ['hls', 'dash']
+                }
+            },
+            # Use cookies if available (helps with rate limiting)
+            'cookiefile': str(cookies_path) if cookies_path.exists() else None,
         }
         
         # Download and extract audio

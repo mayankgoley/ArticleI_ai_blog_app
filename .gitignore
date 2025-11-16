@@ -2,6 +2,9 @@
 temp_audio/*
 !temp_audio/.gitkeep
 
+# YouTube cookies (contains sensitive auth tokens)
+cookies/cookies.txt
+
 # Python cache
 __pycache__/
 *.py[cod]
