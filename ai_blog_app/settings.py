@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-@#^s1hzqyrt(a3ybz(9%51lo2v52_3l4jcjh^8*tq+km3+_1ea"
+SECRET_KEY = config('SECRET_KEY', default="django-insecure-@#^s1hzqyrt(a3ybz(9%51lo2v52_3l4jcjh^8*tq+km3+_1ea")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS configuration
+# For local development: localhost, 127.0.0.1
+# For Render: add your Render domain (e.g., your-app.onrender.com)
+# Use environment variable ALLOWED_HOSTS for production
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,articlei-ai-blog-app-4.onrender.com',
+    cast=Csv()
+)
 
 
 # Application definition
@@ -123,12 +132,13 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Transcription Settings
-ENABLE_ASR = True
-WHISPER_MODEL_SIZE = 'base'  # Options: tiny, base, small, medium, large
-WHISPER_DEVICE = 'cpu'  # Options: cpu, cuda (if GPU available)
-MAX_VIDEO_DURATION = 3600  # 60 minutes in seconds
-AUTO_CLEANUP_AUDIO = True
-ASR_TIMEOUT = 300  # 5 minutes
+# These can be overridden with environment variables for production
+ENABLE_ASR = config('ENABLE_ASR', default=True, cast=bool)
+WHISPER_MODEL_SIZE = config('WHISPER_MODEL_SIZE', default='base')  # Options: tiny, base, small, medium, large
+WHISPER_DEVICE = config('WHISPER_DEVICE', default='cpu')  # Options: cpu, cuda (if GPU available)
+MAX_VIDEO_DURATION = config('MAX_VIDEO_DURATION', default=3600, cast=int)  # 60 minutes in seconds
+AUTO_CLEANUP_AUDIO = config('AUTO_CLEANUP_AUDIO', default=True, cast=bool)
+ASR_TIMEOUT = config('ASR_TIMEOUT', default=300, cast=int)  # 5 minutes
 
 # Media settings for temp files
 MEDIA_ROOT = BASE_DIR / 'media'
