@@ -28,11 +28,11 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 # ALLOWED_HOSTS configuration
 # For local development: localhost, 127.0.0.1
-# For Render: add your Render domain (e.g., your-app.onrender.com)
+# For Render: .onrender.com allows all Render domains (future-proof)
 # Use environment variable ALLOWED_HOSTS for production
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,articlei-ai-blog-app-4.onrender.com',
+    default='localhost,127.0.0.1,.onrender.com',
     cast=Csv()
 )
 
