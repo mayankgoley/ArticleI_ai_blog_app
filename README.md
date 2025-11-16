@@ -37,17 +37,27 @@ An intelligent Django web application that converts YouTube videos into well-for
 - **Responsive Design**: Mobile-first approach, works on all devices
 
 ### AI/ML Components
+- **faster-whisper**: Optimized Whisper implementation for production deployment
+- **ONNX Runtime**: Efficient CPU inference engine (no GPU required)
 - **Whisper Models**: Multiple model sizes (tiny to large) for accuracy/speed tradeoffs
 - **Transcript Cleaning**: Automated text processing and formatting
 - **Content Generation**: Template-based blog formatting with multiple styles
 
+**Why faster-whisper?**
+- ✅ Works on Render and other cloud platforms without system dependencies
+- ✅ No PyTorch or CUDA required (lightweight deployment)
+- ✅ Better performance and lower memory usage than openai-whisper
+- ✅ Same accuracy as original Whisper models
+- ✅ Optimized for CPU inference with ONNX Runtime
+
 ## Installation & Setup
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.10 or higher (3.10.12 recommended for Render deployment)
 - pip (Python package installer)
 - ffmpeg (required for audio processing)
 - 2GB+ RAM (4GB+ recommended for ASR)
+- No GPU required (CPU-optimized with faster-whisper)
 - 5GB+ disk space (for Whisper models and temporary files)
 
 ### Quick Start
@@ -1004,6 +1014,83 @@ python manage.py collectstatic
 ### Supported Languages
 
 English, Spanish, French, German, Italian, Portuguese, Dutch, Polish, Russian, Japanese, Korean, Chinese, Arabic, Hindi, and more (15+ languages with automatic detection)
+
+## Deployment
+
+### Deploying to Render
+
+This application is optimized for deployment on Render's free tier:
+
+**Prerequisites:**
+- GitHub repository with your code
+- Render account (free tier works)
+
+**Steps:**
+
+1. **Push your code to GitHub**
+   ```bash
+   git add -A
+   git commit -m "Prepare for Render deployment"
+   git push origin main
+   ```
+
+2. **Create a new Web Service on Render**
+   - Go to [Render Dashboard](https://dashboard.render.com/)
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+
+3. **Configure the service:**
+   - **Name**: `ai-blog-generator` (or your choice)
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt && python manage.py migrate`
+   - **Start Command**: `gunicorn ai_blog_app.wsgi:application`
+   - **Instance Type**: Free
+
+4. **Add Environment Variables:**
+   ```
+   PYTHON_VERSION=3.10.12
+   SECRET_KEY=your-secret-key-here
+   DEBUG=False
+   ALLOWED_HOSTS=your-app.onrender.com
+   DISABLE_COLLECTSTATIC=1
+   ```
+
+5. **Install system dependencies (Add to Render settings):**
+   - Render automatically includes ffmpeg in the build environment
+
+6. **Deploy!**
+   - Click "Create Web Service"
+   - Render will automatically build and deploy your app
+
+**Important Notes:**
+- ✅ `faster-whisper` works perfectly on Render (no build issues)
+- ✅ No GPU or CUDA required
+- ✅ Automatic HTTPS provided by Render
+- ⚠️ Free tier has 512MB RAM limit - use `tiny` or `base` model
+- ⚠️ Free tier sleeps after 15 minutes of inactivity
+
+**Recommended Settings for Render Free Tier:**
+```python
+# In settings.py for production
+WHISPER_MODEL_SIZE = 'tiny'  # or 'base' if you have enough RAM
+MAX_VIDEO_DURATION = 600  # 10 minutes max
+ASR_TIMEOUT = 180  # 3 minutes timeout
+```
+
+### Deploying to Other Platforms
+
+**Heroku:**
+- Add `Procfile`: `web: gunicorn ai_blog_app.wsgi:application`
+- Add `runtime.txt`: `python-3.10.12`
+- Add buildpack for ffmpeg: `heroku buildpacks:add --index 1 https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git`
+
+**Railway:**
+- Similar to Render, works out of the box with `faster-whisper`
+- Add environment variables in Railway dashboard
+
+**DigitalOcean App Platform:**
+- Configure build and run commands similar to Render
+- Add ffmpeg in the app spec
 
 ## Security Considerations
 

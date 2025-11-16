@@ -2,8 +2,14 @@
 Whisper transcription service module.
 
 This module provides speech-to-text transcription capabilities using
-OpenAI's Whisper model, with support for automatic language detection,
-model caching, and comprehensive error handling.
+faster-whisper (optimized Whisper implementation), with support for 
+automatic language detection, model caching, and comprehensive error handling.
+
+faster-whisper is a lightweight alternative to openai-whisper that:
+- Works on Render and other cloud platforms without system dependencies
+- Doesn't require PyTorch or CUDA
+- Uses ONNX Runtime for efficient CPU inference
+- Provides better performance and lower memory usage
 """
 
 import os
@@ -12,7 +18,6 @@ import time
 import signal
 from pathlib import Path
 from typing import Dict, Optional
-import torch
 
 from .config import (
     WHISPER_MODEL_SIZE,
@@ -64,7 +69,7 @@ def timeout_handler(signum, frame):
 
 def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] = None, force_reload: bool = False) -> object:
     """
-    Load Whisper model with caching to avoid reloading.
+    Load faster-whisper model with caching to avoid reloading.
     
     The model is loaded once and cached in memory. Subsequent calls return
     the cached model unless force_reload is True or a different model size
@@ -78,7 +83,7 @@ def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] =
         force_reload: Force reload the model even if cached.
         
     Returns:
-        Whisper model object
+        faster-whisper WhisperModel object
         
     Raises:
         ModelLoadError: If model fails to load
@@ -99,26 +104,27 @@ def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] =
         )
         model_size = 'base'
     
-    # Validate device
+    # Validate device - faster-whisper uses different device names
     if device not in ['cpu', 'cuda']:
         logger.warning(f"Invalid device '{device}'. Using 'cpu' instead.")
         device = 'cpu'
     
-    # Check if CUDA is available when requested
-    if device == 'cuda' and not torch.cuda.is_available():
-        logger.warning("CUDA requested but not available. Falling back to CPU.")
+    # For faster-whisper, we'll use cpu for compatibility
+    # CUDA support can be added later if needed
+    if device == 'cuda':
+        logger.info("faster-whisper: Using CPU for maximum compatibility on Render")
         device = 'cpu'
     
     # Return cached model if available and same size
     if not force_reload and _whisper_model is not None and _model_size_loaded == model_size:
-        logger.debug(f"Using cached Whisper model: {model_size}")
+        logger.debug(f"Using cached faster-whisper model: {model_size}")
         return _whisper_model
     
     # Load new model
-    logger.info(f"Loading Whisper model: {model_size} on {device}")
+    logger.info(f"Loading faster-whisper model: {model_size} on {device}")
     
     try:
-        import whisper
+        from faster_whisper import WhisperModel
         
         # Get model info for logging
         model_info = VALID_MODEL_SIZES.get(model_size, {})
@@ -127,7 +133,19 @@ def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] =
         
         # Load the model
         start_time = time.time()
-        model = whisper.load_model(model_size, device=device)
+        
+        # faster-whisper parameters
+        # compute_type: "int8" for CPU (faster, less memory), "float16" for GPU
+        compute_type = "int8" if device == "cpu" else "float16"
+        
+        model = WhisperModel(
+            model_size,
+            device=device,
+            compute_type=compute_type,
+            download_root=None,  # Use default cache directory
+            local_files_only=False
+        )
+        
         load_time = time.time() - start_time
         
         # Cache the model
@@ -135,27 +153,19 @@ def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] =
         _model_size_loaded = model_size
         
         logger.info(
-            f"Whisper model loaded successfully in {load_time:.2f}s: "
-            f"{model_size} on {device}"
+            f"faster-whisper model loaded successfully in {load_time:.2f}s: "
+            f"{model_size} on {device} (compute_type: {compute_type})"
         )
         
         return model
         
     except ImportError as e:
         error_msg = (
-            "Whisper library not installed. "
-            "Install with: pip install openai-whisper"
+            "faster-whisper library not installed. "
+            "Install with: pip install faster-whisper"
         )
         logger.error(error_msg)
         raise ModelLoadError(error_msg) from e
-        
-    except torch.cuda.OutOfMemoryError as e:
-        error_msg = (
-            f"Insufficient GPU memory to load {model_size} model. "
-            f"Try a smaller model or use CPU."
-        )
-        logger.error(error_msg)
-        raise OutOfMemoryError(error_msg) from e
         
     except MemoryError as e:
         error_msg = (
@@ -166,14 +176,14 @@ def load_whisper_model(model_size: Optional[str] = None, device: Optional[str] =
         raise OutOfMemoryError(error_msg) from e
         
     except Exception as e:
-        error_msg = f"Failed to load Whisper model: {str(e)}"
+        error_msg = f"Failed to load faster-whisper model: {str(e)}"
         logger.error(error_msg)
         raise ModelLoadError(error_msg) from e
 
 
 def unload_whisper_model() -> None:
     """
-    Unload the cached Whisper model to free memory.
+    Unload the cached faster-whisper model to free memory.
     
     This can be useful for freeing up resources when the model
     is not expected to be used for a while.
@@ -181,7 +191,7 @@ def unload_whisper_model() -> None:
     global _whisper_model, _model_size_loaded
     
     if _whisper_model is not None:
-        logger.info(f"Unloading Whisper model: {_model_size_loaded}")
+        logger.info(f"Unloading faster-whisper model: {_model_size_loaded}")
         _whisper_model = None
         _model_size_loaded = None
         
@@ -189,13 +199,9 @@ def unload_whisper_model() -> None:
         import gc
         gc.collect()
         
-        # Clear CUDA cache if available
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        
-        logger.info("Whisper model unloaded successfully")
+        logger.info("faster-whisper model unloaded successfully")
     else:
-        logger.debug("No Whisper model loaded to unload")
+        logger.debug("No faster-whisper model loaded to unload")
 
 
 def get_model_info() -> Dict:
@@ -279,13 +285,14 @@ def check_audio_corruption(audio_path: str) -> bool:
         bool: True if file appears valid, False if corrupted
     """
     try:
-        import whisper
+        # For faster-whisper, we'll do a basic file check
+        # The actual audio validation happens during transcription
+        path = Path(audio_path)
         
-        # Try to load audio
-        audio = whisper.load_audio(audio_path)
-        
-        # Check if audio data is valid
-        if audio is None or len(audio) == 0:
+        # Check file size is reasonable
+        file_size = path.stat().st_size
+        if file_size < 1000:  # Less than 1KB is suspicious
+            logger.warning(f"Audio file is very small: {file_size} bytes")
             return False
         
         return True
@@ -366,19 +373,11 @@ def transcribe_audio(
         except (ModelLoadError, OutOfMemoryError) as e:
             raise  # Re-raise model loading errors
         
-        # Prepare transcription options
-        transcribe_options = {
-            'language': language or DEFAULT_LANGUAGE,
-            'task': 'transcribe',
-            'verbose': False
-        }
-        
-        # Remove language if None (for auto-detection)
-        if transcribe_options['language'] is None:
-            del transcribe_options['language']
+        # Prepare transcription options for faster-whisper
+        lang = language or DEFAULT_LANGUAGE
         
         logger.info(
-            f"Transcribing with options: {transcribe_options} "
+            f"Transcribing with faster-whisper: language={lang or 'auto'} "
             f"(timeout: {timeout}s)"
         )
         
@@ -391,8 +390,20 @@ def transcribe_audio(
                 signal.signal(signal.SIGALRM, timeout_handler)
                 signal.alarm(timeout)
             
-            # Perform transcription
-            result = model.transcribe(audio_path, **transcribe_options)
+            # Perform transcription with faster-whisper
+            # faster-whisper returns segments generator and info
+            segments, info = model.transcribe(
+                audio_path,
+                language=lang,
+                task='transcribe',
+                beam_size=5,
+                vad_filter=True,  # Voice activity detection
+                vad_parameters=dict(min_silence_duration_ms=500)
+            )
+            
+            # Collect all segments and build full text
+            all_segments = list(segments)
+            text = ' '.join([segment.text for segment in all_segments]).strip()
             
             # Cancel timeout
             if hasattr(signal, 'SIGALRM'):
@@ -406,18 +417,21 @@ def transcribe_audio(
         
         transcription_time = time.time() - start_time
         
-        # Extract results
-        text = result.get('text', '').strip()
-        detected_language = result.get('language', 'unknown')
+        # Extract results from faster-whisper info object
+        detected_language = info.language if hasattr(info, 'language') else 'unknown'
         
-        # Calculate confidence (Whisper doesn't provide direct confidence,
-        # so we use segment-level probabilities if available)
-        segments = result.get('segments', [])
-        if segments:
-            # Average of segment probabilities
-            confidences = [seg.get('no_speech_prob', 0) for seg in segments]
-            # Convert no_speech_prob to confidence (inverse)
-            avg_confidence = 1.0 - (sum(confidences) / len(confidences))
+        # Calculate confidence from segments
+        if all_segments:
+            # Average of segment average probabilities
+            confidences = [seg.avg_logprob for seg in all_segments if hasattr(seg, 'avg_logprob')]
+            if confidences:
+                # Convert log probabilities to confidence (0-1 scale)
+                # avg_logprob is typically negative, closer to 0 is better
+                import math
+                avg_confidence = sum([math.exp(c) for c in confidences]) / len(confidences)
+                avg_confidence = min(1.0, max(0.0, avg_confidence))  # Clamp to 0-1
+            else:
+                avg_confidence = 0.8  # Default confidence if not available
         else:
             avg_confidence = 0.0
         
@@ -457,16 +471,7 @@ def transcribe_audio(
             'error': str(e)
         }
         
-    except torch.cuda.OutOfMemoryError as e:
-        error_msg = (
-            "GPU out of memory during transcription. "
-            "Try using CPU or a smaller model."
-        )
-        logger.error(error_msg)
-        return {
-            'success': False,
-            'error': error_msg
-        }
+
         
     except MemoryError as e:
         error_msg = (
@@ -499,7 +504,7 @@ def transcribe_audio_with_timestamps(
     model_size: Optional[str] = None
 ) -> Dict:
     """
-    Transcribe audio with word-level timestamps.
+    Transcribe audio with word-level timestamps using faster-whisper.
     
     This is useful for creating subtitles or time-aligned transcripts.
     
@@ -526,32 +531,33 @@ def transcribe_audio_with_timestamps(
         # Load model
         model = load_whisper_model(model_size=model_size)
         
-        # Prepare options
-        transcribe_options = {
-            'language': language or DEFAULT_LANGUAGE,
-            'task': 'transcribe',
-            'verbose': False,
-            'word_timestamps': True
-        }
+        # Prepare language
+        lang = language or DEFAULT_LANGUAGE
         
-        if transcribe_options['language'] is None:
-            del transcribe_options['language']
+        # Transcribe with faster-whisper
+        segments_gen, info = model.transcribe(
+            audio_path,
+            language=lang,
+            task='transcribe',
+            beam_size=5,
+            word_timestamps=True,
+            vad_filter=True
+        )
         
-        # Transcribe
-        result = model.transcribe(audio_path, **transcribe_options)
+        # Collect segments
+        all_segments = list(segments_gen)
         
-        # Extract results
-        text = result.get('text', '').strip()
-        segments = result.get('segments', [])
-        detected_language = result.get('language', 'unknown')
+        # Extract full text
+        text = ' '.join([seg.text for seg in all_segments]).strip()
+        detected_language = info.language if hasattr(info, 'language') else 'unknown'
         
-        # Format segments
+        # Format segments with timestamps
         formatted_segments = []
-        for seg in segments:
+        for seg in all_segments:
             formatted_segments.append({
-                'start': seg.get('start', 0),
-                'end': seg.get('end', 0),
-                'text': seg.get('text', '').strip()
+                'start': seg.start,
+                'end': seg.end,
+                'text': seg.text.strip()
             })
         
         logger.info(

@@ -8,14 +8,17 @@ yt-dlp>=2024.1.0
 python-decouple==3.8
 
 # Automatic Speech Recognition (ASR) dependencies
-# OpenAI Whisper for audio transcription
-openai-whisper==20231117
+# faster-whisper: Lightweight Whisper implementation for production deployment
+# Works on Render without system dependencies or GPU requirements
+faster-whisper>=1.0.0
 
-# PyTorch for Whisper model execution
-# Note: Using flexible version to ensure compatibility
-torch>=2.2.0
-torchaudio>=2.2.0
+# ONNX Runtime: Inference engine for faster-whisper
+# Lightweight, CPU-optimized, no CUDA required
+onnxruntime==1.20.1
 
 # FFmpeg Python bindings for audio extraction
 # Note: Requires ffmpeg system package to be installed
 ffmpeg-python==0.2.0
+
+# Production server
+gunicorn==21.2.0
