@@ -3,7 +3,7 @@ whitenoise==6.6.0
 Django>=5.0.0
 
 # YouTube video processing
-yt-dlp>=2024.1.0
+yt-dlp>=2024.11.0
 
 # Configuration management
 python-decouple==3.8

@@ -259,10 +259,12 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
             ],
             # FFmpeg location (dynamically resolved)
             'ffmpeg_location': shutil.which('ffmpeg') or '/usr/bin/ffmpeg',
+            # Force IPv4 (helps with some data center IP blocks)
+            'source_address': '0.0.0.0',
             # YouTube-specific options to bypass bot detection
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
+                    'player_client': ['android', 'ios', 'web'],
                     'skip': ['hls', 'dash']
                 }
             },
