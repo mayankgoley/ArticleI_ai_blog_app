@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional
 import yt_dlp
 import shutil
+import base64
 
 from .config import (
     TEMP_AUDIO_DIR,
@@ -39,6 +40,35 @@ logger = logging.getLogger(__name__)
 # Core Functions
 # ============================================================================
 
+def _setup_cookies() -> Optional[str]:
+    """
+    Setup cookies from environment variable if available.
+    Returns path to cookies file or None.
+    """
+    cookies_path = Path('cookies/cookies.txt')
+    
+    # Check if cookies provided via env var (secure way for Render)
+    cookies_b64 = os.environ.get('YOUTUBE_COOKIES_BASE64')
+    if cookies_b64:
+        try:
+            # Ensure directory exists
+            cookies_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Decode and write to file
+            cookies_content = base64.b64decode(cookies_b64)
+            with open(cookies_path, 'wb') as f:
+                f.write(cookies_content)
+            logger.info("Successfully loaded YouTube cookies from environment variable")
+            return str(cookies_path)
+        except Exception as e:
+            logger.error(f"Failed to load cookies from environment variable: {e}")
+            
+    # Return path if file exists (local dev or manually added)
+    if cookies_path.exists():
+        return str(cookies_path)
+        
+    return None
+
 def get_audio_info(youtube_url: str) -> Dict:
     """
     Get audio metadata from a YouTube video without downloading.
@@ -62,8 +92,8 @@ def get_audio_info(youtube_url: str) -> Dict:
     """
     logger.info(f"Fetching audio info for URL: {youtube_url}")
     
-    # Check for cookies file
-    cookies_path = Path('cookies/cookies.txt')
+    # Setup cookies
+    cookies_file = _setup_cookies()
     
     ydl_opts = {
         'quiet': True,
@@ -72,12 +102,12 @@ def get_audio_info(youtube_url: str) -> Dict:
         # YouTube-specific options to bypass bot detection
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web'],
+                'player_client': ['android', 'ios', 'web'],
                 'skip': ['hls', 'dash']
             }
         },
         # Use cookies if available
-        'cookiefile': str(cookies_path) if cookies_path.exists() else None,
+        'cookiefile': cookies_file,
     }
     
     try:
@@ -239,8 +269,8 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
         
         logger.info(f"Downloading audio to: {output_path}")
         
-        # Check for cookies file (helps bypass YouTube bot detection)
-        cookies_path = Path('cookies/cookies.txt')
+        # Setup cookies
+        cookies_file = _setup_cookies()
         
         # Configure yt-dlp options for audio extraction
         ydl_opts = {
@@ -269,7 +299,7 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
                 }
             },
             # Use cookies if available (helps with rate limiting)
-            'cookiefile': str(cookies_path) if cookies_path.exists() else None,
+            'cookiefile': cookies_file,
         }
         
         # Download and extract audio
