@@ -32,7 +32,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 # Use environment variable ALLOWED_HOSTS for production
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,127.0.0.1,.onrender.com',
+    default='localhost,127.0.0.1,.onrender.com,.hf.space',
     cast=Csv()
 )
 
