@@ -253,7 +253,7 @@ def yt_transcript(url):
     # Step 1: Try existing subtitle extraction
     subtitle_result = extract_subtitles(url)
     
-    if subtitle_result['success'] and len(subtitle_result['text'].strip()) > 100:
+    if subtitle_result['success'] and subtitle_result.get('method') == 'subtitles' and len(subtitle_result['text'].strip()) > 100:
         overall_time = time.time() - overall_start_time
         logger.info(
             f"Transcript extraction completed via subtitles "
@@ -351,17 +351,40 @@ def yt_transcript(url):
                 TranscriptionTimeoutError, AudioFormatError, OutOfMemoryError,
                 WhisperError, TranscriptionError) as e:
             # Re-raise custom exceptions to be handled by generate_blog
-            logger.error(f"ASR failed with known error: {str(e)}")
+            if isinstance(e, TranscriptionTimeoutError):
+                logger.error(f"ASR timed out after {getattr(settings, 'ASR_TIMEOUT', 'unknown')}s: {str(e)}")
+            elif isinstance(e, DurationLimitError):
+                logger.error(f"Video duration exceeded limit: {str(e)}")
+            else:
+                logger.error(f"ASR failed with known error: {str(e)}")
+            
+            # Fallback to description if available
+            if subtitle_result['success'] and subtitle_result.get('method') == 'description':
+                logger.warning(f"Falling back to video description due to ASR error")
+                return subtitle_result
+                
             raise
             
         except ImportError as e:
             error_msg = "ASR module not available. Please install required dependencies."
             logger.error(f"{error_msg}: {str(e)}")
+            
+            # Fallback to description if available
+            if subtitle_result['success'] and subtitle_result.get('method') == 'description':
+                logger.warning(f"Falling back to video description due to missing ASR module")
+                return subtitle_result
+                
             raise TranscriptionError(error_msg)
             
         except Exception as e:
             error_msg = f"ASR failed with unexpected error: {str(e)}"
             logger.error(error_msg, exc_info=True)
+            
+            # Fallback to description if available
+            if subtitle_result['success'] and subtitle_result.get('method') == 'description':
+                logger.warning(f"Falling back to video description due to unexpected ASR error")
+                return subtitle_result
+                
             raise TranscriptionError(error_msg)
             
         finally:
@@ -381,6 +404,12 @@ def yt_transcript(url):
     
     # No ASR available or disabled
     logger.error("No transcript available and ASR is disabled")
+    
+    # Fallback to description if available
+    if subtitle_result['success'] and subtitle_result.get('method') == 'description':
+        logger.warning(f"Using video description as ASR is disabled")
+        return subtitle_result
+
     return {
         'success': False,
         'text': 'No transcript or description available for this video. The video might not have captions enabled.',

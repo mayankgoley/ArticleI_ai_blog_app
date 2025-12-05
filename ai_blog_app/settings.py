@@ -136,9 +136,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ENABLE_ASR = config('ENABLE_ASR', default=True, cast=bool)
 WHISPER_MODEL_SIZE = config('WHISPER_MODEL_SIZE', default='base')  # Options: tiny, base, small, medium, large
 WHISPER_DEVICE = config('WHISPER_DEVICE', default='cpu')  # Options: cpu, cuda (if GPU available)
-MAX_VIDEO_DURATION = config('MAX_VIDEO_DURATION', default=3600, cast=int)  # 60 minutes in seconds
+MAX_VIDEO_DURATION = config('MAX_VIDEO_DURATION', default=14400, cast=int)  # 4 hours in seconds
 AUTO_CLEANUP_AUDIO = config('AUTO_CLEANUP_AUDIO', default=True, cast=bool)
-ASR_TIMEOUT = config('ASR_TIMEOUT', default=300, cast=int)  # 5 minutes
+ASR_TIMEOUT = config('ASR_TIMEOUT', default=14400, cast=int)  # 240 minutes
 
 # Media settings for temp files
 MEDIA_ROOT = BASE_DIR / 'media'

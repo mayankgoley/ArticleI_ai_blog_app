@@ -76,17 +76,17 @@ AUDIO_QUALITY = {
 # Processing Limits and Timeouts
 # ============================================================================
 
-# Maximum video duration in seconds (default: 60 minutes)
-MAX_VIDEO_DURATION = _get_setting('MAX_VIDEO_DURATION', 3600)
+# Maximum video duration in seconds (default: 4 hours)
+MAX_VIDEO_DURATION = _get_setting('MAX_VIDEO_DURATION', 14400)
 
 # Minimum video duration in seconds (default: 1 second)
 MIN_VIDEO_DURATION = _get_setting('MIN_VIDEO_DURATION', 1)
 
-# ASR processing timeout in seconds (default: 5 minutes)
-ASR_TIMEOUT = _get_setting('ASR_TIMEOUT', 300)
+# ASR processing timeout in seconds (default: 240 minutes)
+ASR_TIMEOUT = _get_setting('ASR_TIMEOUT', 14400)
 
-# Maximum file size for audio files in MB (default: 500MB)
-MAX_AUDIO_FILE_SIZE_MB = _get_setting('MAX_AUDIO_FILE_SIZE_MB', 500)
+# Maximum file size for audio files in MB (default: 1000MB)
+MAX_AUDIO_FILE_SIZE_MB = _get_setting('MAX_AUDIO_FILE_SIZE_MB', 1000)
 
 
 # ============================================================================

@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 import yt_dlp
+import shutil
 
 from .config import (
     TEMP_AUDIO_DIR,
@@ -248,9 +249,6 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': AUDIO_FORMAT,
                 'preferredquality': '192',
-            }, {
-                'key': 'FFmpegAudioConvertor',
-                'preferredcodec': AUDIO_FORMAT,
             }],
             'outtmpl': str(output_path.with_suffix('')),  # yt-dlp adds extension
             'quiet': False,
@@ -259,8 +257,8 @@ def extract_audio(youtube_url: str, output_path: Optional[str] = None) -> Dict:
                 '-ar', str(AUDIO_SAMPLE_RATE),  # Sample rate: 16kHz
                 '-ac', str(AUDIO_CHANNELS),      # Channels: mono
             ],
-            # FFmpeg location (for Render deployment)
-            'ffmpeg_location': '/usr/bin/ffmpeg',
+            # FFmpeg location (dynamically resolved)
+            'ffmpeg_location': shutil.which('ffmpeg') or '/usr/bin/ffmpeg',
             # YouTube-specific options to bypass bot detection
             'extractor_args': {
                 'youtube': {
