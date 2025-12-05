@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ai-blog-app
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn ai_blog_app.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: WHISPER_MODEL_SIZE
+        value: tiny
+      - key: MAX_VIDEO_DURATION
+        value: "300"
+      - key: ASR_TIMEOUT
+        value: "120"
+      - key: WEB_CONCURRENCY
+        value: "2"
