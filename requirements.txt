@@ -1,5 +1,6 @@
 # Core Django framework
-Django==5.2.7
+whitenoise==6.6.0
+Django>=5.0.0
 
 # YouTube video processing
 yt-dlp>=2024.1.0
